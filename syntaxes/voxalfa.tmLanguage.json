@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
   "name": "Voxalfa",
   "scopeName": "source.voxalfa",
-  "fileTypes": ["va", "voxalfa"],
+  "fileTypes": ["vfa"],
   "patterns": [
     { "include": "#directives" },
     { "include": "#comments" },
@@ -23,12 +23,34 @@
     "delimiters": {
       "patterns": [
         {
-          "name": "keyword.operator.header-delimiter.voxalfa",
-          "match": "^---$"
+          "match": "^[ \\t]*(---)(?=[ \\t]*(?:;|$))",
+          "captures": {
+            "1": { "name": "keyword.operator.header-delimiter.voxalfa" }
+          }
         },
         {
-          "name": "keyword.operator.section-delimiter.voxalfa",
-          "match": "^(==|--|<<|\\+\\+)$"
+          "match": "^[ \\t]*(==)(?=[ \\t]*(?:;|$))",
+          "captures": {
+            "1": { "name": "keyword.operator.section-major-delimiter.voxalfa" }
+          }
+        },
+        {
+          "match": "^[ \\t]*(<<)(?=[ \\t]*(?:;|$))",
+          "captures": {
+            "1": { "name": "keyword.operator.section-merge-delimiter.voxalfa" }
+          }
+        },
+        {
+          "match": "^[ \\t]*(--)(?=[ \\t]*(?:;|$))",
+          "captures": {
+            "1": { "name": "keyword.operator.section-split-delimiter.voxalfa" }
+          }
+        },
+        {
+          "match": "^[ \\t]*(\\+\\+)(?=[ \\t]*(?:;|$))",
+          "captures": {
+            "1": { "name": "keyword.operator.sub-section-delimiter.voxalfa" }
+          }
         }
       ]
     },
@@ -36,34 +58,62 @@
       "patterns": [
         {
           "name": "meta.directive.voxalfa",
-          "match": "^\\s*(;;)(@)([a-zA-Z][a-zA-Z_-]*)\\s+(.*)$",
-          "captures": {
-            "1": { "name": "punctuation.definition.directive.voxalfa" },
+          "begin": "^[ \\t]*(;;)[ \\t]*(@)[ \\t]*([a-zA-Z][a-zA-Z_-]*)(?=[ \\t]|$)",
+          "beginCaptures": {
+            "1": { "name": "comment.line.semicolon.voxalfa" },
             "2": { "name": "keyword.control.directive.voxalfa" },
-            "3": { "name": "entity.name.function.directive.voxalfa" },
-            "4": { "name": "string.unquoted.directive.voxalfa" }
-          }
+            "3": { "name": "keyword.control.directive.voxalfa" }
+          },
+          "end": "$",
+          "patterns": [
+            { "include": "#comments" },
+            { "match": "[ \\t]+" },
+            { "include": "#parameter-assignment" },
+            {
+              "name": "punctuation.separator.pipe.voxalfa",
+              "match": "\\|"
+            },
+            {
+              "name": "comment.line.directive.voxalfa",
+              "match": "[^;\\n]+"
+            }
+          ]
         }
+      ]
+    },
+    "assignment-line-body": {
+      "patterns": [
+        { "include": "#comments" },
+        {
+          "name": "punctuation.separator.pipe.voxalfa",
+          "match": "\\|"
+        },
+        { "include": "#parameter-assignment" }
       ]
     },
     "metadata-and-parameters": {
       "patterns": [
         {
           "name": "meta.line.metadata.voxalfa",
-          "begin": "^\\[([#$\\^])\\]",
+          "begin": "^[ \\t]*(\\[)[ \\t]*(#)[ \\t]*(\\])",
           "beginCaptures": {
-            "0": { "name": "punctuation.definition.tag.voxalfa" },
-            "1": { "name": "keyword.other.line-type.voxalfa" }
+            "1": { "name": "punctuation.bracket.square.voxalfa" },
+            "2": { "name": "keyword.other.line-type.voxalfa" },
+            "3": { "name": "punctuation.bracket.square.voxalfa" }
           },
           "end": "$",
-          "patterns": [
-            { "include": "#comments" },
-            { "include": "#parameter-assignment" },
-            {
-              "name": "punctuation.separator.pipe.voxalfa",
-              "match": "\\|"
-            }
-          ]
+          "patterns": [{ "include": "#assignment-line-body" }]
+        },
+        {
+          "name": "meta.line.parameter.voxalfa",
+          "begin": "^[ \\t]*(\\[)[ \\t]*(\\$)[ \\t]*(\\])",
+          "beginCaptures": {
+            "1": { "name": "punctuation.bracket.square.voxalfa" },
+            "2": { "name": "keyword.other.line-type.voxalfa" },
+            "3": { "name": "punctuation.bracket.square.voxalfa" }
+          },
+          "end": "$",
+          "patterns": [{ "include": "#assignment-line-body" }]
         }
       ]
     },
@@ -71,41 +121,30 @@
       "patterns": [
         {
           "name": "meta.assignment.voxalfa",
-          "begin": "([a-zA-Z][a-zA-Z_-]*)\\s*(=)",
+          "begin": "([a-zA-Z][a-zA-Z_-]*)[ \\t]*(=)",
           "beginCaptures": {
             "1": { "name": "variable.other.property.voxalfa" },
             "2": { "name": "keyword.operator.assignment.voxalfa" }
           },
-          "end": "(?=\\||$|;|})",
-          "patterns": [{ "include": "#values" }]
+          "end": "(?=[ \\t]*(?:\\||;|$|\\}))",
+          "patterns": [
+            { "match": "[ \\t]+" },
+            { "include": "#assignment-values" }
+          ]
         }
       ]
     },
-    "values": {
+    "assignment-values": {
       "patterns": [
         {
           "name": "string.quoted.double.voxalfa",
-          "begin": "\"",
-          "end": "\"",
-          "patterns": [
-            {
-              "name": "constant.character.escape.voxalfa",
-              "match": "\\\\."
-            }
-          ]
+          "match": "\"[^\"\\n]*\""
         },
-        {
-          "name": "constant.language.boolean.voxalfa",
-          "match": "\\b(true|false)\\b"
-        },
-        {
-          "name": "constant.numeric.float.voxalfa",
-          "match": "\\b\\d*\\.\\d+\\b"
-        },
-        {
-          "name": "constant.numeric.integer.voxalfa",
-          "match": "\\b\\d+\\b"
-        },
+        { "include": "#delimited-value" }
+      ]
+    },
+    "delimited-value": {
+      "patterns": [
         {
           "name": "meta.delimited-value.voxalfa",
           "begin": "\\{",
@@ -124,13 +163,33 @@
             },
             {
               "name": "keyword.operator.range.voxalfa",
-              "match": ":|\\.\\."
+              "match": "\\.\\.|:"
             }
           ]
+        }
+      ]
+    },
+    "values": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.voxalfa",
+          "match": "\"[^\"\\n]*\""
+        },
+        {
+          "name": "constant.language.boolean.voxalfa",
+          "match": "\\b(true|false)\\b"
+        },
+        {
+          "name": "constant.numeric.float.voxalfa",
+          "match": "\\d*\\.\\d+"
+        },
+        {
+          "name": "constant.numeric.integer.voxalfa",
+          "match": "\\d+"
         },
         {
           "name": "variable.other.builtin.voxalfa",
-          "match": "\\b[a-zA-Z#]+\\b"
+          "match": "[a-zA-Z#]+"
         }
       ]
     },
@@ -138,10 +197,11 @@
       "patterns": [
         {
           "name": "meta.line.solfa.voxalfa",
-          "begin": "^\\[([a-zA-Z][a-zA-Z_-]*)\\]",
+          "begin": "^[ \\t]*(\\[)[ \\t]*([a-zA-Z][a-zA-Z_-]*)[ \\t]*(\\])",
           "beginCaptures": {
-            "0": { "name": "punctuation.bracket.square.voxalfa" },
-            "1": { "name": "entity.name.type.voice.voxalfa" }
+            "1": { "name": "punctuation.bracket.square.voxalfa" },
+            "2": { "name": "entity.name.type.voice.voxalfa" },
+            "3": { "name": "punctuation.bracket.square.voxalfa" }
           },
           "end": "\\|\\||$",
           "endCaptures": {
@@ -174,7 +234,7 @@
               "match": "`"
             },
             {
-              "name": "constant.numeric.prolonged.voxalfa",
+              "name": "constant.language.prolonged.voxalfa",
               "match": "-"
             },
             {
@@ -194,47 +254,62 @@
       "patterns": [
         {
           "name": "meta.line.lyric.voxalfa",
-          "begin": "^\\[(\\d+)\\]",
+          "begin": "^[ \\t]*(\\[)[ \\t]*(\\d+)[ \\t]*(\\])",
           "beginCaptures": {
-            "0": { "name": "punctuation.bracket.square.voxalfa" },
-            "1": { "name": "constant.numeric.integer.verse.voxalfa" }
+            "1": { "name": "punctuation.bracket.square.voxalfa" },
+            "2": { "name": "constant.numeric.integer.verse.voxalfa" },
+            "3": { "name": "punctuation.bracket.square.voxalfa" }
           },
           "end": "$",
-          "patterns": [
-            { "include": "#comments" },
-            {
-              "name": "keyword.operator.anchor.voxalfa",
-              "match": "@@"
-            },
-            {
-              "name": "meta.lyric.span.voxalfa",
-              "match": "(@)(\\d+)",
-              "captures": {
-                "1": { "name": "keyword.operator.span.voxalfa" },
-                "2": { "name": "constant.numeric.integer.voxalfa" }
-              }
-            },
-            {
-              "name": "constant.character.special.voxalfa",
-              "match": "&(bls|tld|btk|lch|rch|sls|lpr|rpr|atr|amp|scl|dot)"
-            },
-            {
-              "name": "constant.language.placeholder.voxalfa",
-              "match": "~"
-            },
-            {
-              "name": "keyword.operator.lyric-concat.voxalfa",
-              "match": "_+"
-            },
-            {
-              "name": "keyword.operator.lyric-newline.voxalfa",
-              "match": "\\\\+"
-            },
-            {
-              "name": "punctuation.bracket.group.voxalfa",
-              "match": "[()`]"
-            }
-          ]
+          "patterns": [{ "include": "#lyric-line-body" }]
+        },
+        {
+          "name": "meta.line.lyric.voxalfa",
+          "begin": "^[ \\t]*(\\[)[ \\t]*(\\*)[ \\t]*(\\])",
+          "beginCaptures": {
+            "1": { "name": "punctuation.bracket.square.voxalfa" },
+            "2": { "name": "keyword.operator.verse-wildcard.voxalfa" },
+            "3": { "name": "punctuation.bracket.square.voxalfa" }
+          },
+          "end": "$",
+          "patterns": [{ "include": "#lyric-line-body" }]
+        }
+      ]
+    },
+    "lyric-line-body": {
+      "patterns": [
+        { "include": "#comments" },
+        {
+          "name": "keyword.operator.anchor.voxalfa",
+          "match": "@@"
+        },
+        {
+          "name": "meta.lyric.span.voxalfa",
+          "match": "(@)(\\d+)",
+          "captures": {
+            "1": { "name": "keyword.operator.span.voxalfa" },
+            "2": { "name": "constant.numeric.integer.voxalfa" }
+          }
+        },
+        {
+          "name": "constant.character.special.voxalfa",
+          "match": "&(bls|tld|btk|lpr|rpr|atr|amp|scl)"
+        },
+        {
+          "name": "constant.language.placeholder.voxalfa",
+          "match": "~"
+        },
+        {
+          "name": "keyword.operator.lyric-concat.voxalfa",
+          "match": "_+"
+        },
+        {
+          "name": "keyword.operator.lyric-newline.voxalfa",
+          "match": "\\\\+"
+        },
+        {
+          "name": "punctuation.bracket.group.voxalfa",
+          "match": "[()`]"
         }
       ]
     }
